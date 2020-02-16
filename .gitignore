@@ -13,3 +13,14 @@
 
 # Dependency directories (remove the comment below to include it)
 # vendor/
+
+callgrind*
+makeviz.png
+*.swp
+.DS_Store
+
+# Container image markers
+.hello-go*
+
+# Program binary
+hello-go
