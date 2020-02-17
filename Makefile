@@ -98,7 +98,9 @@ $(SERVICE_NAME): $(GOLANG_SOURCES) Dockerfile | build-container
 		   --volume $(CURDIR):$(BUILDER_GOPATH)/src/$(SERVICE_NAME) \
 		   --workdir $(BUILDER_GOPATH)/src/$(SERVICE_NAME) \
 		   $(BUILD_IMAGE_NAME) \
-		   go build -v -a -ldflags "-extldflags -static"
+		   bash -c 'go build -v -a -ldflags "-extldflags -static" && \
+					upx -q -8 $(SERVICE_NAME) && \
+					upx -q -t $(SERVICE_NAME)'
 
 .PHONY: run
 #: Run the binary inside the release container
