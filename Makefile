@@ -35,7 +35,7 @@ K := $(foreach exec,$(TOOLS),\
 # $1 the image name
 # $2 the marker filename
 define create_image_marker
-	time=$$(docker inspect --format '{{.Metadata.LastTagTime}}' $1 2>/dev/null | perl -pe 's/\s+[^\s]+$$//'); \
+	time=$$(docker image inspect --format '{{.Metadata.LastTagTime}}' $1 2>/dev/null | perl -pe 's/\s+[^\s]+$$//'); \
 	if [[ $$? -eq 0 ]]; then \
 		$(TOUCH) -d "$${time}" '$2'; \
 	else\
@@ -81,7 +81,7 @@ build-container: $(BUILD_IMAGE_MARKER) | .create-build-image-marker
 
 $(BUILD_IMAGE_MARKER): Dockerfile
 	$(call delete_image,$(BUILD_IMAGE_NAME)) && \
-	DOCKER_BUILDKIT=1 docker build --no-cache --force-rm --target=builder --tag=$(BUILD_IMAGE_NAME) .
+	DOCKER_BUILDKIT=1 docker image build --no-cache --force-rm --target=builder --tag=$(BUILD_IMAGE_NAME) .
 
 .PHONY: build
 #: Generate the static binary and the container image for it
@@ -89,11 +89,11 @@ build: $(RELEASE_IMAGE_MARKER) $(SERVICE_NAME) | .create-release-image-marker
 
 $(RELEASE_IMAGE_MARKER): Dockerfile $(SERVICE_NAME)
 	$(call delete_image,$(RELEASE_IMAGE_NAME)) && \
-	DOCKER_BUILDKIT=1 docker build --no-cache --force-rm --target=release --tag=$(RELEASE_IMAGE_NAME) .
+	DOCKER_BUILDKIT=1 docker image build --no-cache --force-rm --target=release --tag=$(RELEASE_IMAGE_NAME) .
 
 #: Build the project binary using the build container
 $(SERVICE_NAME): $(GOLANG_SOURCES) Dockerfile | build-container
-	docker run --rm \
+	docker container run --rm \
 		   --env GOPATH=$(BUILDER_GOPATH) \
 		   --volume $(CURDIR):$(BUILDER_GOPATH)/src/$(SERVICE_NAME) \
 		   --workdir $(BUILDER_GOPATH)/src/$(SERVICE_NAME) \
@@ -105,7 +105,7 @@ $(SERVICE_NAME): $(GOLANG_SOURCES) Dockerfile | build-container
 .PHONY: run
 #: Run the binary inside the release container
 run: build
-	docker run --rm \
+	docker container run --rm \
            --volume $(CURDIR)/$(SERVICE_NAME):/$(SERVICE_NAME) \
            $(RELEASE_IMAGE_NAME) \
 		   /$(SERVICE_NAME)
@@ -113,7 +113,7 @@ run: build
 .PHONY: test
 #: Run the tests inside the build container
 test: $(GOLANG_SOURCES) $(GOLANG_TEST_SOURCES) Dockerfile | build-container
-	docker run --rm \
+	docker container run --rm \
 		   --env GOPATH=$(BUILDER_GOPATH) \
 		   --volume $(CURDIR):$(BUILDER_GOPATH)/src/$(SERVICE_NAME) \
 		   --workdir $(BUILDER_GOPATH)/src/$(SERVICE_NAME) \
